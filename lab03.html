@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>COMP4431 Audio Processor</title>
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+    .container { width: 1000px; margin-top: 60px }
+    .navbar-inverse .navbar-brand { color: white }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-header">
+            <span class="navbar-brand">COMP4431 Audio Processor</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <audiocontroller id="audioController"/>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                <h4>General Settings</h4>
+            </div>
+            <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
+                <h4>Playback and Visualization Controls</h4>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+                <label for="waveform-frequency">Frequency:</label>
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input class="form-control" id="waveform-frequency" type="number" value="256" min="1" step="1">
+                            <div class="input-group-addon">Hz</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                <label for="waveform-position">Stereo Position:</label>
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="input-group-addon">Left</div>
+                            <input class="form-control" id="waveform-position" type="range" value="0.5" min="0" max="1" step="0.05">
+                            <div class="input-group-addon">Right</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-1 col-sm-1 col-md-2 col-lg-1"></div>
+            <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
+                <div class="btn-toolbar">
+                    <div class="btn-group">
+                        <button id="btnPlay" class="btn btn-success btn-large"><i class="glyphicon glyphicon-play"></i> Play</button>
+                        <button id="btnStop" class="btn btn-danger btn-large"><i class="glyphicon glyphicon-stop"></i> Stop</button>
+                    </div>
+                    <a class="btn btn-large btn-info" id="savelink" download="export.wav"><i class="glyphicon glyphicon-download"></i> Save</a>
+                    <a class="btn btn-large btn-primary" id="generateMusic" data-toggle="modal" data-target="#importMusicModal"><i class="glyphicon glyphicon-music"></i> Import Music</a>
+                </div>
+                <br />
+                <form class="form-inline">
+                    <label for="zoomLevel">Zoom To:</label>
+                    <select class="form-control" id="zoomLevel">
+                        <option value="1c">View 1 Cycle</option>
+                        <option value="100ms">View 0.1s</option>
+                        <option value="200ms">View 0.2s</option>
+                        <option value="1s">View 1s</option>
+                        <option value="all" selected>View All</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                &nbsp;
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="dropdown active">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Waveform<br /><span class="title">Sine (Time Domain Method)</span>
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu" id="waveform-dropdown-menu">
+                            <li role="presentation" class="active"><a class="waveform-type" href="#sine-time" role="tab" data-toggle="tab">Sine (Time Domain Method)</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#square-time" role="tab" data-toggle="tab">Square (Time Domain Method)</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#square-additive" role="tab" data-toggle="tab">Square (Additive Method)</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#sawtooth-time" role="tab" data-toggle="tab">Sawtooth (Time Domain Method)</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#sawtooth-additive" role="tab" data-toggle="tab">Sawtooth (Additive Method)</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#triangle-additive" role="tab" data-toggle="tab">Triangle (Additive Method)</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#bell-fm" role="tab" data-toggle="tab">Bell (FM)</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#karplus-strong" role="tab" data-toggle="tab">Karplus-Strong Algorithm</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#white-noise" role="tab" data-toggle="tab">White Noise</a></li>
+                            <li role="presentation"><a class="waveform-type" href="#repeating-narrow-pulse" role="tab" data-toggle="tab">Repeating Narrow Pulse</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Postprocessing 1<br /><span class="title"><i>Do Nothing</i></span>
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu" id="pp1-dropdown-menu">
+                            <li role="presentation"><a data-pp="1" href="#no-pp" role="tab" data-toggle="tab"><i>Do Nothing</i></a></li>
+                            <li role="presentation"><a data-pp="1" href="#reverse" role="tab" data-toggle="tab">Reverse</a></li>
+                            <li role="presentation"><a data-pp="1" href="#decay" role="tab" data-toggle="tab">Exponential Decay</a></li>
+                            <li role="presentation"><a data-pp="1" href="#fade-in" role="tab" data-toggle="tab">Fade In</a></li>
+                            <li role="presentation"><a data-pp="1" href="#fade-out" role="tab" data-toggle="tab">Fade Out</a></li>
+                            <li role="presentation"><a data-pp="1" href="#boost" role="tab" data-toggle="tab">Boost</a></li>
+                            <li role="presentation"><a data-pp="1" href="#tremolo" role="tab" data-toggle="tab">Tremolo</a></li>
+                            <li role="presentation"><a data-pp="1" href="#echo" role="tab" data-toggle="tab">Echo</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Postprocessing 2<br /><span class="title"><i>Do Nothing</i></span>
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu" id="pp2-dropdown-menu">
+                            <li role="presentation"><a data-pp="2" href="#no-pp" role="tab" data-toggle="tab"><i>Do Nothing</i></a></li>
+                            <li role="presentation"><a data-pp="2" href="#reverse" role="tab" data-toggle="tab">Reverse</a></li>
+                            <li role="presentation"><a data-pp="2" href="#decay" role="tab" data-toggle="tab">Exponential Decay</a></li>
+                            <li role="presentation"><a data-pp="2" href="#fade-in" role="tab" data-toggle="tab">Fade In</a></li>
+                            <li role="presentation"><a data-pp="2" href="#fade-out" role="tab" data-toggle="tab">Fade Out</a></li>
+                            <li role="presentation"><a data-pp="2" href="#boost" role="tab" data-toggle="tab">Boost</a></li>
+                            <li role="presentation"><a data-pp="2" href="#tremolo" role="tab" data-toggle="tab">Tremolo</a></li>
+                            <li role="presentation"><a data-pp="2" href="#echo" role="tab" data-toggle="tab">Echo</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Postprocessing 3<br /><span class="title"><i>Do Nothing</i></span>
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu" id="pp3-dropdown-menu">
+                            <li role="presentation"><a data-pp="3" href="#no-pp" role="tab" data-toggle="tab"><i>Do Nothing</i></a></li>
+                            <li role="presentation"><a data-pp="3" href="#reverse" role="tab" data-toggle="tab">Reverse</a></li>
+                            <li role="presentation"><a data-pp="3" href="#decay" role="tab" data-toggle="tab">Exponential Decay</a></li>
+                            <li role="presentation"><a data-pp="3" href="#fade-in" role="tab" data-toggle="tab">Fade In</a></li>
+                            <li role="presentation"><a data-pp="3" href="#fade-out" role="tab" data-toggle="tab">Fade Out</a></li>
+                            <li role="presentation"><a data-pp="3" href="#boost" role="tab" data-toggle="tab">Boost</a></li>
+                            <li role="presentation"><a data-pp="3" href="#tremolo" role="tab" data-toggle="tab">Tremolo</a></li>
+                            <li role="presentation"><a data-pp="3" href="#echo" role="tab" data-toggle="tab">Echo</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Postprocessing 4<br /><span class="title"><i>Do Nothing</i></span>
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu" id="pp1-dropdown-menu">
+                            <li role="presentation"><a data-pp="4" href="#no-pp" role="tab" data-toggle="tab"><i>Do Nothing</i></a></li>
+                            <li role="presentation"><a data-pp="4" href="#reverse" role="tab" data-toggle="tab">Reverse</a></li>
+                            <li role="presentation"><a data-pp="4" href="#decay" role="tab" data-toggle="tab">Exponential Decay</a></li>
+                            <li role="presentation"><a data-pp="4" href="#fade-in" role="tab" data-toggle="tab">Fade In</a></li>
+                            <li role="presentation"><a data-pp="4" href="#fade-out" role="tab" data-toggle="tab">Fade Out</a></li>
+                            <li role="presentation"><a data-pp="4" href="#boost" role="tab" data-toggle="tab">Boost</a></li>
+                            <li role="presentation"><a data-pp="4" href="#tremolo" role="tab" data-toggle="tab">Tremolo</a></li>
+                            <li role="presentation"><a data-pp="4" href="#echo" role="tab" data-toggle="tab">Echo</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="sine-time">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="square-time">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="square-additive">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="sawtooth-time">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="sawtooth-additive">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="triangle-additive">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="bell-fm">
+                        <h5>Parameters</h5>
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="fm-modulation-frequency">Modulation Frequency:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <input class="form-control" id="fm-modulation-frequency" type="number" value="50" min="1" step="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="fm-modulation-amplitude">Modulation Amplitude:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <input class="form-control" id="fm-modulation-amplitude" type="number" value="4" min="0.1" step="0.1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="karplus-strong">
+                        <h5>Parameters</h5>
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="karplus-base">Input:</label>
+                                <select class="form-control" id="karplus-base">
+                                    <option value="256hz-sine">256Hz Sine Wave</option>
+                                    <option value="white-noise">White Noise</option>
+                                </select>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="karplus-p"><i>p</i>:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <input class="form-control" id="karplus-p" type="number" value="100" min="5" step="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="karplus-b"><i>b</i>:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <input class="form-control" id="karplus-b" type="number" value="0.99" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="white-noise">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="repeating-narrow-pulse">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="no-pp">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="reverse">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="decay">
+                        <h5>Parameters</h5>
+                        <label for="decay-rate">Time Coefficient:</label>
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <input class="form-control" id="decay-rate" type="number" value="0.5" min="0.05" step="0.05" data-p1="0.5" data-p2="0.5" data-p3="0.5" data-p4="0.5" data-active="p1">
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="fade-in">
+                        <h5>Parameters</h5>
+                        <label for="fade-in-duration">Fade In Duration:</label>
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <input class="form-control" id="fade-in-duration" type="number" value="2" min="0.05" step="0.05" data-p1="2" data-p2="2" data-p3="2" data-p4="2" data-active="p1">
+                                    <div class="input-group-addon">seconds</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="fade-out">
+                        <h5>Parameters</h5>
+                        <label for="fade-out-duration">Fade Out Duration:</label>
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <input class="form-control" id="fade-out-duration" type="number" value="2" min="0.05" step="0.05" data-p1="2" data-p2="2" data-p3="2" data-p4="2" data-active="p1">
+                                    <div class="input-group-addon">seconds</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="boost">
+                        <h5>Parameters</h5>
+                        <p>No parameters avaliable</p>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="tremolo">
+                        <h5>Parameters</h5>
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="tremolo-frequency">Frequency:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <input class="form-control" id="tremolo-frequency" type="number" value="10" min="1" step="1" data-p1="10" data-p2="10" data-p3="10" data-p4="10" data-active="p1">
+                                            <div class="input-group-addon">Hz</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="tremolo-wetness">Wetness:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <input class="form-control" id="tremolo-wetness" type="number" value="0.5" min="0" max="1" step="0.01" data-p1="0.5" data-p2="0.5" data-p3="0.5" data-p4="0.5" data-active="p1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="echo">
+                        <h5>Parameters</h5>
+                        <div class="row">
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="echo-delay">Delay line duration:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <input class="form-control" id="echo-delay-line-duration" type="number" value="0.5" min="0" step="0.01" data-p1="0.5" data-p2="0.5" data-p3="0.5" data-p4="0.5" data-active="p1">
+                                            <div class="input-group-addon">seconds</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+                                <label for="echo-multiplier">Multiplier:</label>
+                                <div class="form-inline">
+                                    <div class="form-group">
+                                        <input class="form-control" id="echo-multiplier" type="number" value="0.5" min="0.05" max="10" step="0.05" data-p1="0.5" data-p2="0.5" data-p3="0.5" data-p4="0.5" data-active="p1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="importMusicModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Import Music</h4>
+                </div>
+                <div class="modal-body">
+                    <label for="importMusicURL">URL of the Music's JSON File</label>
+                    <input class="form-control" id="importMusicURL" placeholder="Enter the URL of the JSON file of the music here..." /><br>
+                    <input class="form-control-horizontal" id="useDuration" type="checkbox" checked />
+                    <label for="useDuration">Use Note Duration from the JSON Input</label><br />
+                    <input class="form-control-horizontal" id="enablePostProcessing" type="checkbox" checked />
+                    <label for="enablePostProcessing">Apply Postprocessing to Each Note (may be slower)</label><br/>
+                    <input class="form-control-horizontal" id="autoAmplitude" type="checkbox" checked />
+                    <label for="autoAmplitude">Automatically Boost the Amplitude of the Entire Music</label>
+                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="btnImportMusic">Import and Generate Music</button>
+                    <a class="btn btn-large btn-info disabled" id="saveMusicLink" download="export.wav"><i class="glyphicon glyphicon-download"></i> Save Music</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+
+    <script src="js/binaryToolkit.js"></script>
+    <script src="js/waveTrack.js"></script>
+    <script src="js/waveformGenerator.js"></script>
+    <script src="js/postprocessor.js"></script>
+    <script src="js/audioPlayback.js"></script>
+    <script src="js/audioSequence.js"></script>
+    <script src="js/channel.js"></script>
+    <script src="js/audioController.js"></script>
+
+    <script>
+        var sampleRate = 44100; // The sampling rate used
+        var duration = 6.0 // The default duration of the  waveform, in seconds
+        var audioControl = null; // The 'audioController' instance
+        var currentWaveformType = "sine-time"; // Currently selected waveform tpye
+        var currentEffects = ["no-pp", "no-pp", "no-pp", "no-pp"]; // Currently selected post-processings
+        var currentZoomLevel = "all"; // Currently selected zoom mode
+
+        // Event handler for the 'change' event of the zoom <select>
+        function changeZoomLevel(e) {
+            currentZoomLevel = $(e.target).val();
+            audioControl.zoom();
+        }
+
+        // Trigger the waveform genereation and post-processings applied to
+        // the newly d wavefom. When the generation process is completed,
+        // enable the "Save" button again.
+        function generateNewWaveform() {
+            audioControl.generateWaveform();
+            $("#savelink").removeClass("disabled");
+        }
+
+        // Event handler for the 'change' event of different parameter controls <input>
+        function updateWaveformDisplay(e) {
+            // Disables the "Save" button
+            $("#savelink").addClass("disabled");
+
+            // Stop the audio that is currently playing back, if any
+            audioControl.stop();
+
+            var target = $(e.target);
+
+            // If the event is triggered by an element that has "data-active" attribute,
+            // store the new value into the correct "data-ppX" attribute. The "data-ppX"
+            // attribute is used by the postprocessor in the post-processing stage.
+            var activePP = target.data("active");
+            if(activePP) {
+                target.data(activePP, target.val());
+            }
+
+            // The parameters are ready, start the waveform generation 0.5 seconds
+            // later. This short delay allows the browser to update the GUI, which
+            // greatly reduce the feeling of laggy.
+            setTimeout(generateNewWaveform, 500);
+        }
+
+        // Event handler for the 'show.bs.tab' event of the post-processings tabs
+        function updatePostProcessingPaneInfo(e) {
+            // The event target is one of the drop down menu items (list of choices of post-processings)
+            var target = $(e.target);
+
+            // The "data-pp" attribute stores which stage the post-processing is, e.g. 1 for post-processing 1
+            var ppStage = parseInt(target.data("pp"));
+
+            // Update the tab's title to the newly selected post-processing
+            target.parents("li").find("span.title").html(target.html());
+
+            // Update the currently selected post-processing stored in the memory
+            currentEffects[ppStage - 1] = target.attr("href").substring(1);
+
+            // In the tab pane, find every paramters control <input>s
+            $(target.attr("href") + " input").each(function(i, e) {
+
+                // Update their values to the previously set value, if any
+                var oldValue = $(e).data("p" + ppStage);
+                if($(e).data("p" + ppStage)) {
+                    $(e).val(oldValue);
+                }
+
+                // Set the "data-active" attribute to "pX", so that when the <input> element
+                // is changed, the event handler knows which "data-pX" need to be updated,
+                // and store the newly selected value
+                $(e).data("active", "p" + ppStage);
+            });
+        }
+
+        // Event handler for the 'click' event of the tabs
+        // The main goal of this handler is to improve the user experience by adding
+        // the behaviour of switching tab when the tab is clicked, in additional to
+        // the default behaviour which switch the tab only when the drop down menu
+        // items (list of choices of waveform/post-processings) are clicked
+        function showTab(e) {
+            // The target is the 'tab', i.e. the <li>. But most of the time the event
+            // is triggered from the <a> inside it, due to the area occupied is much
+            // bigger and hence easier to be clicked. So we need to adjust the 'target'
+            // if it is not what we want.
+            var target = $(e.target);
+
+            // Check if 'target' is actually a <li> element. If not, we need to
+            // find the <li> that is a parent of the current selected element.
+            if(target.prop("tagName") !== "LI") {
+                target = target.parents("li");
+            }
+
+            // Find the drop down menu items (list of choices of waveform/post-processings),
+            // and see if the "data-pp" attribute exist. If yes that mean it is one of the
+            // post-processing tab being clicked, otherwise it is the waveform tab being
+            // clicked.
+            var ppStage = parseInt(target.find("ul li a").data("pp"));
+            if(ppStage) {
+                // Find the drop down menu item of this tab (i.e. the post-processing) that is currently selected
+                target = target.find("ul li a[href='#" + currentEffects[ppStage - 1] + "']");
+            } else {
+                // Find the drop down menu item of this tab (i.e. the waveform) that is currently selected
+                target = target.find("ul li a[href='#" + currentWaveformType + "']");
+            }
+
+            // Programmatically trigger a 'show' ('show.bs.tab') event on the tab drop down menu item.
+            // Since we have set up this:
+            // `$('a[data-toggle="tab"]').on('show.bs.tab', changeTabs);`,
+            // this event chain will finally trigger the event handler 'changeTabs'.
+            target.tab("show");
+        }
+
+        // Event handler for the 'show.bs.tab' event of the tabs.
+        // This event handler is executed just before the tab pane is really shown to the user.
+        function changeTabs(e) {
+            // The target is the drop down menu item of the tab
+            var target = $(e.target);
+
+            // Check if it is for the "waveform" tab
+            if(target.hasClass("waveform-type")) {
+                // Change the tab title to relect which waveform is selected
+                target.parents("li").find("span.title").html(target.html());
+                // Change the 'currentWaveformType' stored in the memory
+                currentWaveformType = $(e.target).attr("href").substring(1);
+            } else {
+                // Handle
+                updatePostProcessingPaneInfo(e);
+            }
+        }
+
+        // Event handler for the 'click' event of the 'btn_import'
+        // Read the JSON file using Ajax method and  a music
+        function importMusic(e) {
+            // Stop the audio that is currently playing back, if any
+            audioControl.stop();
+
+            // Disable the 'Import' and 'Save Music' buttons
+            $("#saveMusicLink").addClass("disabled");
+            $("#btnImportMusic").prop("disabled", true);
+
+            console.log("Generatiing music...");
+
+            // Get the JSON file using Ajax
+            $.getJSON($("#importMusicURL").val())
+                .done(function(data, status) { // Success handler
+                    // Start generating the music
+                    audioControl.generateMusic(data);
+
+                    // Enable the 'Import' and 'Save Music' buttons
+                    $("#saveMusicLink").removeClass("disabled");
+                    $("#btnImportMusic").prop("disabled", false);
+                })
+                .fail(function() { // Error handler
+                    alert("Failed to load the JSON file");
+                    // Enable the 'Import' button
+                    $("#btnImportMusic").prop("disabled", false);
+                });
+        }
+
+        // Set up every things when the document is fully loaded
+        $(document).ready(function() {
+            // Check if the required WebAPIs are avaliable
+            if (typeof(window.AudioContext || window.webkitAudioContext) === 'undefined') {
+                alert('Your browser has no web audio API support! Try using another browser like Google Chrome.');
+                return;
+            }
+
+            // Great! Start setting up
+
+            // First of all, bring the <audioController> online.
+            // The constructor will takes the first <audioController> element and prepares
+            // all the visual properties of it, sets it up so that we can use it like a normal
+            // HTML DOM element.
+            initializeaudioControllers();
+
+            // Find the only <audioController> element, which has an ID "audioController"
+            audioControl = document.querySelector("#audioController");
+
+            // Remove any predefined channels attached to it
+            audioControl.removeAllChannels();
+
+            // Add two channels to it with label "Left Channel" and "Right Channel"
+            // which are used as the left and right channels of our stereo music
+            audioControl.createChannel("Left Channel");
+            audioControl.createChannel("Right Channel");
+
+            // Set up the event handlers
+            $("#zoomLevel").on("change", changeZoomLevel); // Zoom level changed
+            $('li.dropdown').on("click", showTab); // Tab clicked
+            $('a[data-toggle="tab"]').on('show.bs.tab', changeTabs); // Just before tab pane is shown
+            $('a[data-toggle="tab"]').on('shown.bs.tab', updateWaveformDisplay); // After tab pane is shown
+
+            // Any changes made to the <input> elememnts will trigger the waveform generation
+            // procedure 'updateWaveformDisplay'.
+            // After setting up the event handler, we also take the first element in the set
+            // and programmatically trigger a 'change' event.
+            $("#karplus-base, input").not("#importMusicURL, #useDuration, #enablePostProcessing").on("change", updateWaveformDisplay).first().change();
+
+            // Play and Stop button
+            $("#btnPlay").on("click", function() { audioControl.play(); });
+            $("#btnStop").on("click", function() { audioControl.stop(); });
+
+            // Import music (in JSON format)
+            $("#btnImportMusic").on("click", importMusic);
+        });
+    </script>
+</body>
+</html>
